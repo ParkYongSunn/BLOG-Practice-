@@ -2,12 +2,15 @@ package springbootdevelop.domain;
 
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 
 @Entity
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Articles {
 
     //엔티티 ID > BIGING > PK > NOT NULL
@@ -31,22 +34,9 @@ public class Articles {
         this.content = content;
     }
 
-    protected Articles(){
-
-    }
-    //getter ID
-    public Long getId(){
-        return id;
-    }
-
-    //getter TITLE
-    public String getTitle(){
-        return title;
-    }
-
-    //getter CONTENT
-    public String getContent(){
-        return content;
+    public void update(String title, String content){
+        this.title = title;
+        this.content = content;
     }
 
 }
