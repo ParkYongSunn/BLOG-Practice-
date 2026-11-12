@@ -30,7 +30,7 @@ springbootdevelop
 | [블로그 글 전체 조회](#2-블로그-글-전체-조회-api) | `GET` | `/api/articles` | 없음 | `200 OK` + `List<ArticleResponse>` |
 | [블로그 글 단건 조회](#3-블로그-글-단건-조회-api) | `GET` | `/api/articles/{id}` | 경로 변수 `id` | `200 OK` + `ArticleResponse` |
 | [블로그 글 삭제](#4-블로그-글-삭제-api) | `DELETE` | `/api/articles/{id}` | 경로 변수 `id` | `200 OK` (본문 없음) |
-| [블로그 글 수정](#5-블로그-글-수정-api) | `PUT` (예정) | `/api/articles/{id}` | `UpdateArticleRequest` (JSON) | Service/DTO/엔티티 구현 완료, Controller 미구현 |
+| [블로그 글 수정](#5-블로그-글-수정-api) | `PUT` | `/api/articles/{id}` | `UpdateArticleRequest` (JSON) | `200 OK` + 수정된 `Articles` |
 
 ------------------------------------------------------------------------------------------------------------------------------
 
@@ -401,24 +401,60 @@ public void delete(Long id){
 
 `id`에 해당하는 블로그 글의 제목과 내용을 수정합니다.
 
-> ⚠️ 현재 **Service / DTO / 엔티티 메서드까지만 구현**되어 있고, `BlogApiController`에 수정 엔드포인트(`@PutMapping`)는 아직 없습니다.
-
 | 항목 | 내용 |
 |------|------|
-| 메서드 / URL | `PUT /api/articles/{id}` (예정) |
+| 메서드 / URL | `PUT /api/articles/{id}` |
 | 요청 본문 | `UpdateArticleRequest` (JSON) |
+| 성공 응답 | `200 OK` + 수정된 `Articles` |
 | 실패 | 해당 `id`가 없으면 `IllegalArgumentException("not found : {id}")` 발생 |
 
 ### 처리 흐름
 
 ```
-BlogService.update()
-  → BlogRepository.findById()           # 수정할 글 조회, 없으면 예외
-  → Articles.update()                   # 제목/내용 변경
-  → (트랜잭션 종료 시 변경 감지로 UPDATE 자동 실행)
+BlogApiController.updateArticles()
+  → BlogService.update()
+    → BlogRepository.findById()         # 수정할 글 조회, 없으면 예외
+    → Articles.update()                 # 제목/내용 변경
+    → (트랜잭션 종료 시 변경 감지로 UPDATE 자동 실행)
+```
+
+### 요청 / 응답 예시
+
+```http
+PUT /api/articles/1
+Content-Type: application/json
+
+{
+  "title": "수정된 제목",
+  "content": "수정된 내용"
+}
+```
+
+```http
+HTTP/1.1 200 OK
+
+{
+  "id": 1,
+  "title": "수정된 제목",
+  "content": "수정된 내용"
+}
 ```
 
 ### 계층별 코드
+
+**Controller** — `BlogApiController.updateArticles()`
+
+```java
+@PutMapping("/api/articles/{id}")
+public ResponseEntity<Articles> updateArticles(@PathVariable long id, @RequestBody UpdateArticleRequest request){
+    Articles updatedArticles = blogService.update(id, request);
+    return ResponseEntity.ok().body(updatedArticles);
+}
+```
+
+- `@PutMapping("/api/articles/{id}")` : HTTP PUT 요청을 해당 메서드에 매핑
+- `@PathVariable` / `@RequestBody` : 경로의 `id`와 요청 본문(JSON)을 각각 바인딩
+- `ResponseEntity.ok()` : 수정된 엔티티를 담아 `200 OK` 응답
 
 **Service** — `BlogService.update()`
 
@@ -500,7 +536,7 @@ INSERT INTO articles (title, content) VALUES ('제목 3', '내용 3')
 | `@Column` | JPA | 컬럼 이름, NOT NULL, 수정 가능 여부 등 지정 |
 | `@Service` | Spring | 서비스 계층 빈으로 등록 |
 | `@RestController` | Spring | `@Controller` + `@ResponseBody`. 반환값을 JSON으로 응답 |
-| `@PostMapping` / `@GetMapping` / `@DeleteMapping` | Spring | HTTP POST / GET / DELETE 요청을 메서드에 매핑 |
+| `@PostMapping` / `@GetMapping` / `@PutMapping` / `@DeleteMapping` | Spring | HTTP POST / GET / PUT / DELETE 요청을 메서드에 매핑 |
 | `@PathVariable` | Spring | URL 경로의 `{id}` 값을 메서드 파라미터로 바인딩 |
 | `@RequestBody` | Spring | 요청 본문(JSON)을 자바 객체로 변환 |
 | `@Transactional` | 트랜잭션 | 메서드를 하나의 트랜잭션으로 처리. 엔티티 변경 시 변경 감지로 자동 UPDATE |

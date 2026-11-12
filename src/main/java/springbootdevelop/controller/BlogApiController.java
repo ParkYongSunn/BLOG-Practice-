@@ -9,6 +9,7 @@ import springbootdevelop.Service.BlogService;
 import springbootdevelop.domain.Articles;
 import springbootdevelop.dto.AddArticleRequest;
 import springbootdevelop.dto.ArticleResponse;
+import springbootdevelop.dto.UpdateArticleRequest;
 
 import java.util.List;
 
@@ -48,5 +49,13 @@ public class BlogApiController {
         blogService.delete(id);
 
         return ResponseEntity.ok().build();
+    }
+
+    //수정 api
+    @PutMapping("/api/articles/{id}")
+    public ResponseEntity<Articles> updateArticles(@PathVariable long id, @RequestBody UpdateArticleRequest request){
+        Articles updatedArticles = blogService.update(id, request);
+
+        return ResponseEntity.ok().body(updatedArticles);
     }
 }
